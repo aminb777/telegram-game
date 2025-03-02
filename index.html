@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Phaser Game</title>
+    
+    <!-- Load Telegram Web App API -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Load Phaser.js -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<script>
+    // Initialize Telegram WebApp
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand(); // Expand the WebView to full screen
+
+    // Phaser Game Configuration
+    const config = {
+        type: Phaser.AUTO,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        physics: {
+            default: 'arcade',
+            arcade: { gravity: { y: 300 }, debug: false }
+        },
+        scene: {
+            preload: preload,
+            create: create,
+            update: update
+        }
+    };
+
+    let player;
+    let score = 0;
+    let scoreText;
+
+    const game = new Phaser.Game(config);
+
+    function preload() {
+        this.load.image('background', 'https://phaser.io/content/tutorials/making-your-first-phaser-3-game/part9/platform.png');
+        this.load.image('player', 'https://phaser.io/content/tutorials/making-your-first-phaser-3-game/part9/dude.png');
+    }
+
+    function create() {
+        this.add.image(window.innerWidth / 2, window.innerHeight / 2, 'background').setScale(2);
+        
+        player = this.physics.add.sprite(window.innerWidth / 2, 100, 'player');
+        player.setBounce(0.2);
+        player.setCollideWorldBounds(true);
+
+        scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#fff' });
+
+        // Handle user input
+        this.input.on('pointerdown', function () {
+            player.setVelocityY(-200);
+            score += 1;
+            scoreText.setText('Score: ' + score);
+        });
+
+        // Send score to Telegram when the game is over
+        this.time.delayedCall(20000, function() {
+            Telegram.WebApp.sendData(JSON.stringify({ score: score }));
+            Telegram.WebApp.close();
+        }, [], this);
+    }
+
+    function update() {
+        if (player.y > window.innerHeight) {
+            score = 0;
+            player.y = 100;
+            scoreText.setText('Score: ' + score);
+        }
+    }
+</script>
+
+</body>
+</html>
